@@ -18,9 +18,7 @@ A C++ project demonstrating object-oriented programming (OOP) concepts for vario
 - Topological sort (for directed graphs)
 
 ## File Structure
-- `graph_oops.cpp` — All class definitions, implementations, and a comprehensive set of tests in `main()`
-- `readme.md` — Project documentation (this file)
-
+- `graph_oops.cpp` — All class definitions, implementations, and a comprehensive set of tests in `main()
 ## How to Build and Run
 1. **Compile:**
    ```sh
