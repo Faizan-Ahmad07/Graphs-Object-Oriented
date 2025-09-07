@@ -2,7 +2,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void printVector(vector<int> &v)
+void printVector(const vector<int> &v)
 {
     for (int i = 0; i < v.size(); i++)
     {
@@ -194,14 +194,16 @@ int Graph::ShortestPath(int start, int destination)
     while(!q.empty())
     {
         // lambda capture 
-        auto [distance , node] = q.top();
+        pair<int, int> top = q.top();
+        int dist = top.first;
+        int node = top.second;
         q.pop();
         if (node == destination) break;
         for (auto neighbour : adjList[node])
         {
-            if (dp[neighbour] > distance + 1)
+            if (dp[neighbour] > dist + 1)
             {
-                dp[neighbour] = distance + 1;
+                dp[neighbour] = dist + 1;
                 q.push(make_pair(dp[neighbour], neighbour));
             }
         }
@@ -300,16 +302,13 @@ bool DirectedGraph::isCyclic()
 
 class WeightedGraph : public Graph
 {
-    // protected so that WeightedDirectedGraph class can access it
 protected:
-    vector<vector<pair<int, int>>> adjList;
+    vector<vector<pair<int, int>>> weightedAdjList;
     void numConnectedComponenetsHelper(int node, vector<int> &visited);
     bool isCyclicHelper(int node, vector<int> & visited, int parent);
 
 public:
     WeightedGraph(int nodes);
-    // since number of arguments are different, it is the case of method overloading(consider it different function all together)
-    // so we need to again define it to be virtual here(for appropriate binding behaviour in this class and WeightedDirectedGraph class)
     virtual void addEdge(int v, int w, int weight);
     virtual void removeEdge(int v, int w);
     vector<int> bfs(int node);
@@ -320,7 +319,6 @@ public:
     virtual int ShortestPath(int start, int target);
     vector<pair<int,int>> MinimumSpanningTree();
 
-    // display has same number of arguments so no need to define it to be virtual here(as already done in Graph class)
     void display();
     friend ostream & operator << (ostream &out, const WeightedGraph &graph);
 };
@@ -337,7 +335,7 @@ vector<int> WeightedGraph::bfs(int vertex)
         int node = q.front();
         q.pop();
         ans.push_back(node);
-        for (auto neighbour : adjList[node])
+        for (auto neighbour : weightedAdjList[node])
         {
             if (!visited[neighbour.first])
             {
@@ -353,7 +351,7 @@ void WeightedGraph::dfsHelper(int node, vector<int> &visited, vector<int> &ans)
 {
     visited[node] = 1;
     ans.push_back(node);
-    for (auto neighbour : adjList[node])
+    for (auto neighbour : weightedAdjList[node])
     {
         if (!visited[neighbour.first])
         {
@@ -368,7 +366,7 @@ vector<int> WeightedGraph::dfs(int node)
     vector<int> visited(numNodes, 0);
     visited[node] = 1;
     ans.push_back(node);
-    for (auto neighbour : adjList[node])
+    for (auto neighbour : weightedAdjList[node])
     {
         dfsHelper(neighbour.first, visited, ans);
     }
@@ -378,7 +376,7 @@ vector<int> WeightedGraph::dfs(int node)
 ostream & operator << (ostream &out, const WeightedGraph &graph){
     for (int node = 0; node < graph.numNodes; node++){
         out << node << " -> ";
-        for(auto neighbour : graph.adjList[node]){
+        for(auto neighbour : graph.weightedAdjList[node]){
             out << neighbour.first << " " << neighbour.second << "  ";
         }
         out << endl;
@@ -388,29 +386,28 @@ ostream & operator << (ostream &out, const WeightedGraph &graph){
 
 WeightedGraph::WeightedGraph(int nodes) : Graph(nodes)
 {
-    // since adjList of this class is different from Graph class, we need to resize it here
-    adjList.resize(numNodes);
+    weightedAdjList.resize(numNodes);
 }
 void WeightedGraph::addEdge(int v, int w, int weight)
 {
-    adjList[v].push_back(make_pair(w, weight));
-    adjList[w].push_back(make_pair(v, weight));
+    weightedAdjList[v].push_back(make_pair(w, weight));
+    weightedAdjList[w].push_back(make_pair(v, weight));
 }
 void WeightedGraph::removeEdge(int v, int w)
 {
-    for (auto itr = adjList[v].begin(); itr != adjList[v].end(); itr++)
+    for (auto itr = weightedAdjList[v].begin(); itr != weightedAdjList[v].end(); itr++)
     {
         if (itr->first == w)
         {
-            adjList[v].erase(itr);
+            weightedAdjList[v].erase(itr);
             break;
         }
     }
-    for (auto itr = adjList[w].begin(); itr != adjList[w].end(); itr++)
+    for (auto itr = weightedAdjList[w].begin(); itr != weightedAdjList[w].end(); itr++)
     {
         if (itr->first == v)
         {
-            adjList[w].erase(itr);
+            weightedAdjList[w].erase(itr);
             break;
         }
     }
@@ -418,7 +415,7 @@ void WeightedGraph::removeEdge(int v, int w)
 void WeightedGraph::numConnectedComponenetsHelper(int node, vector<int> & visited)
 {
     visited[node] = 1;
-    for (auto neighbour : adjList[node])
+    for (auto neighbour : weightedAdjList[node])
     {
         if (!visited[neighbour.first])
         {
@@ -443,7 +440,7 @@ int WeightedGraph::numConnectedComponents()
 bool WeightedGraph::isCyclicHelper(int node, vector<int> & visited, int parent)
 {
     visited[node] = 1;
-    for(auto neighbour : adjList[node]){
+    for(auto neighbour : weightedAdjList[node]){
         if(!visited[neighbour.first]){
             if(WeightedGraph::isCyclicHelper(neighbour.first, visited, node)){
                 return true;
@@ -462,26 +459,26 @@ int WeightedGraph::ShortestPath(int start, int destination)
     q.push(make_pair(0, start));
     while(!q.empty())
     {
-        auto [distance , node] = q.top();
+        auto top = q.top();
+        int dist = top.first;
+        int node = top.second;
         q.pop();
         if (node == destination) break;
-        for (auto neighbour : adjList[node])
+        for (auto neighbour : weightedAdjList[node])
         {
-            if (dp[neighbour.first] > distance + neighbour.second)
+            if (dp[neighbour.first] > dist + neighbour.second)
             {
-                dp[neighbour.first] = distance + neighbour.second;
+                dp[neighbour.first] = dist + neighbour.second;
                 q.push(make_pair(dp[neighbour.first], neighbour.first));
             }
         }
     }
-    // return -1 for not reachable from start to destination
     if (dp[destination] == 1e9) return -1;
     return dp[destination];
 }
 vector<pair<int,int>> WeightedGraph::MinimumSpanningTree()
 {
     vector<int> included(numNodes, 0);
-    // stores the minimum edge weight through which the any node was encountered
     vector<int> dp(numNodes, 1e9);
     dp[0] = 0;
     vector<int> parent(numNodes);
@@ -490,11 +487,13 @@ vector<pair<int,int>> WeightedGraph::MinimumSpanningTree()
     q.push(make_pair(0, 0));
     while(!q.empty())
     {
-        auto [distance , node] = q.top();
+        auto top = q.top();
+        int dist = top.first;
+        int node = top.second;
         q.pop();
         if (included[node] == 1) continue;
         included[node] = 1;
-        for (auto neighbour : adjList[node])
+        for (auto neighbour : weightedAdjList[node])
         {
             if (!included[neighbour.first] && dp[neighbour.first] > neighbour.second) {
                 dp[neighbour.first] = neighbour.second;
@@ -515,9 +514,9 @@ void WeightedGraph::display()
     for (int i = 0; i < numNodes; i++)
     {
         cout << i << " -> ";
-        for (int j = 0; j < adjList[i].size(); j++)
+        for (int j = 0; j < weightedAdjList[i].size(); j++)
         {
-            cout << adjList[i][j].first << " " << adjList[i][j].second << "  ";
+            cout << weightedAdjList[i][j].first << " " << weightedAdjList[i][j].second << "  ";
         }
         cout << endl;
     }
@@ -533,15 +532,15 @@ public:
 WeightedDirectedGraph::WeightedDirectedGraph(int vertices) : WeightedGraph(vertices) {}
 void WeightedDirectedGraph::addEdge(int v, int w, int weight)
 {
-    adjList[v].push_back(make_pair(w, weight));
+    weightedAdjList[v].push_back(make_pair(w, weight));
 }
 void WeightedDirectedGraph::removeEdge(int v, int w)
 {
-    for (auto itr = adjList[v].begin(); itr != adjList[v].end(); itr++)
+    for (auto itr = weightedAdjList[v].begin(); itr != weightedAdjList[v].end(); itr++)
     {
         if (itr->first == w)
         {
-            adjList[v].erase(itr);
+            weightedAdjList[v].erase(itr);
             break;
         }
     }
@@ -549,23 +548,69 @@ void WeightedDirectedGraph::removeEdge(int v, int w)
 
 int main()
 {
-    WeightedGraph g(8);
-    g.addEdge(0, 1, 1);
-    g.addEdge(0, 2, 1);
-    g.addEdge(0, 3, 1);
-    g.addEdge(2, 3, 1);
-    g.addEdge(4, 5, 1);
-    g.addEdge(5, 7, 1);
-    g.addEdge(4, 6, 1);
-    g.addEdge(6, 7, 1);
-    g.addEdge(3, 4, 1);
-    
-    cout << "Graph :\n";
-    cout << g;
+    cout << "==== Test 1: Undirected Unweighted Graph ====" << endl;
+    Graph ug(6);
+    ug.addEdge(0, 1);
+    ug.addEdge(0, 2);
+    ug.addEdge(1, 3);
+    ug.addEdge(2, 3);
+    ug.addEdge(4, 5);
+    ug.display();
+    cout << "BFS from 0: "; printVector(ug.bfs(0));
+    cout << "DFS from 0: "; printVector(ug.dfs(0));
+    cout << "Is Cyclic: " << ug.isCyclic() << endl;
+    cout << "Number of Connected Components: " << ug.numConnectedComponents() << endl;
+    cout << "Shortest Path 0->3: " << ug.ShortestPath(0, 3) << endl;
 
-    cout << '\n';
-    cout << "Number of Connected Components: ";
-    cout << g.numConnectedComponents();
-    
+    cout << "\n==== Test 2: Directed Graph ====" << endl;
+    DirectedGraph dg(6);
+    dg.addEdge(0, 1);
+    dg.addEdge(0, 2);
+    dg.addEdge(1, 3);
+    dg.addEdge(2, 3);
+    dg.addEdge(3, 4);
+    dg.addEdge(4, 5);
+    dg.display();
+    cout << "Topological Sort: "; printVector(dg.topoSort());
+    cout << "Is Cyclic: " << dg.isCyclic() << endl;
+
+    cout << "\n==== Test 3: Weighted Undirected Graph ====" << endl;
+    WeightedGraph wg(5);
+    wg.addEdge(0, 1, 2);
+    wg.addEdge(0, 2, 4);
+    wg.addEdge(1, 2, 1);
+    wg.addEdge(1, 3, 7);
+    wg.addEdge(2, 4, 3);
+    wg.display();
+    cout << "BFS from 0: "; printVector(wg.bfs(0));
+    cout << "DFS from 0: "; printVector(wg.dfs(0));
+    cout << "Number of Connected Components: " << wg.numConnectedComponents() << endl;
+    cout << "Shortest Path 0->4: " << wg.ShortestPath(0, 4) << endl;
+    cout << "Minimum Spanning Tree (edges): ";
+    for (auto p : wg.MinimumSpanningTree()) cout << "(" << p.first << "," << p.second << ") ";
+    cout << endl;
+
+    cout << "\n==== Test 4: Weighted Directed Graph ====" << endl;
+    WeightedDirectedGraph wdg(5);
+    wdg.addEdge(0, 1, 10);
+    wdg.addEdge(0, 2, 3);
+    wdg.addEdge(1, 2, 1);
+    wdg.addEdge(2, 1, 4);
+    wdg.addEdge(2, 3, 2);
+    wdg.addEdge(3, 4, 2);
+    wdg.addEdge(4, 3, 9);
+    wdg.display();
+    cout << "BFS from 0: "; printVector(wdg.bfs(0));
+    cout << "DFS from 0: "; printVector(wdg.dfs(0));
+    cout << "Shortest Path 0->4: " << wdg.ShortestPath(0, 4) << endl;
+
+    cout << "\n==== Test 5: Edge Removal and Display ====" << endl;
+    ug.removeEdge(0, 1);
+    ug.display();
+    wg.removeEdge(0, 1);
+    wg.display();
+    wdg.removeEdge(0, 1);
+    wdg.display();
+
     return 0;
 }
