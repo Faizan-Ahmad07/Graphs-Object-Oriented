@@ -51,6 +51,3 @@ You can modify or extend the tests in `main()` to experiment with different grap
 ## Requirements
 - C++17 or later
 - Standard C++ libraries (no external dependencies)
-
-## License
-This project is provided for educational purposes.
